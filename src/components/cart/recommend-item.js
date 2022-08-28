@@ -1,3 +1,8 @@
+/* eslint-disable import/prefer-default-export */
+/* eslint-disable arrow-body-style */
+/* eslint-disable react/prop-types */
+/* eslint-disable react/function-component-definition */
+/* eslint-disable react/jsx-filename-extension */
 import React from 'react'
 import styles from './recommend-item.module.css'
 import { MainButton } from '../../ui/main-button/main-button'
