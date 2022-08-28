@@ -1,2 +1,1 @@
-# react-redux-thunk-1
-Created with CodeSandbox
+## task 1/5

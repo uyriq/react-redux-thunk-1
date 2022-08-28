@@ -1,0 +1,18 @@
+body {
+  background-color: #15151a;
+}
+
+.App {
+  font-family: sans-serif;
+  padding: 40px;
+  width: 50%;
+  height: 700px;
+  margin: 0 auto;
+  color: #fff;
+}
+
+@media (max-width: 1000px) {
+  .App {
+    width: 90%;
+  }
+}
