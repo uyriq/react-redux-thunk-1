@@ -1,7 +1,50 @@
-export const INCREASE_ITEM = 'INCREASE_ITEM';
-export const DECREASE_ITEM = 'DECREASE_ITEM';
-export const DELETE_ITEM = 'DELETE_ITEM';
+import { getItemsRequest } from '../fakeApi'
 
-export const CANCEL_PROMO = 'CANCEL_PROMO';
+export const INCREASE_ITEM = 'INCREASE_ITEM'
+export const DECREASE_ITEM = 'DECREASE_ITEM'
+export const DELETE_ITEM = 'DELETE_ITEM'
 
-export const TAB_SWITCH = 'TAB_SWITCH';
+export const CANCEL_PROMO = 'CANCEL_PROMO'
+
+export const TAB_SWITCH = 'TAB_SWITCH'
+
+export const GET_ITEMS_REQUEST = 'GET_ITEMS_REQUEST' // — отображается, если запрос отправлен.
+export const GET_ITEMS_SUCCESS = 'GET_ITEMS_SUCCESS' // — показывается в случае успеха, когда запрос выполнен и данные получены.
+export const GET_ITEMS_FAILED = 'GET_ITEMS_FAILED' // — используется в случае ошибки.
+
+// Наш первый thunk
+export function getItems() {
+    // Воспользуемся первым аргументом из усилителя redux-thunk - dispatch
+    // eslint-disable-next-line func-names
+    return function (dispatch) {
+        // Проставим флаг в хранилище о том, что мы начали выполнять запрос
+        // Это нужно, чтоб отрисовать в интерфейсе лоудер или заблокировать
+        // ввод на время выполнени я запроса
+        dispatch({
+            type: GET_ITEMS_REQUEST,
+        })
+        // Запрашиваем данные у сервера
+        getItemsRequest()
+            .then((res) => {
+                if (res && res.success) {
+                    // В случае успешного получения данных вызываем экшен
+                    // для записи полученных данных в хранилище
+                    dispatch({
+                        type: GET_ITEMS_SUCCESS,
+                        items: res.data,
+                    })
+                } else {
+                    // Если произошла ошибка, отправляем соотвтествующий экшен
+                    dispatch({
+                        type: GET_ITEMS_FAILED,
+                    })
+                }
+            })
+            .catch((err) => {
+                // Если сервер не вернул данных, также отправляем экшен об ошибке
+                dispatch({
+                    type: GET_ITEMS_FAILED,
+                })
+            })
+    }
+}

@@ -17,15 +17,16 @@ module.exports = {
             'error',
             {
                 endOfLine: 'auto',
+                tabWidth: 4,
             },
         ],
         // Indent with 4 spaces
-        indent: ['error', 4],
+        indent: ['warning', 4],
 
         // Indent JSX with 4 spaces
-        'react/jsx-indent': ['error', 4],
+        'react/jsx-indent': ['warning', 4],
 
         // Indent props with 4 spaces
-        'react/jsx-indent-props': ['error', 4],
+        'react/jsx-indent-props': ['warning', 4],
     },
 }
