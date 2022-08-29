@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react'
-import { useSelector } from 'react-redux'
 import styles from './app.module.css'
 import { Title } from '../../ui/title/title'
 import { Cart } from '../cart'
@@ -7,16 +6,16 @@ import { Delivery } from '../delivery'
 import { Checkout } from '../checkout'
 import { Recommend } from '../cart/recommend'
 import { TotalPrice } from '../common/total-price'
+import { useSelector } from 'react-redux'
 
 const title = { cart: 'Корзина', delivery: 'Доставка', checkout: 'Подтверждение заказа' }
 
 function App() {
-    const step = useSelector((store) => store.step)
+    const step = useSelector((state) => state.step)
 
     const content = useMemo(() => {
         switch (step) {
             case 'cart': {
-                // eslint-disable-next-line react/jsx-filename-extension
                 return <Cart />
             }
             case 'delivery': {
@@ -30,7 +29,6 @@ function App() {
             }
         }
     }, [step])
-
     return (
         <div className={styles.app}>
             <Title
