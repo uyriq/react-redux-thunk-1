@@ -1,29 +1,24 @@
-/* eslint-disable import/prefer-default-export */
-/* eslint-disable indent */
-/* eslint-disable default-param-last */
 import { combineReducers } from 'redux'
 import { cartReducer } from './cart'
+import { deliveryReducer } from './delivery'
+import { checkoutReducer } from './checkout'
 import { NEXT_STEP, PREVIOUS_STEP } from '../actions'
 
 const stepReducer = (state = 'cart', action) => {
     switch (action.type) {
         case NEXT_STEP: {
-            // eslint-disable-next-line no-nested-ternary
             return state === 'cart'
                 ? 'delivery'
-                : // eslint-disable-next-line no-nested-ternary
-                state === 'delivery'
+                : state === 'delivery'
                 ? 'checkout'
                 : state === 'checkout'
                 ? 'checkout'
                 : 'checkout'
         }
         case PREVIOUS_STEP: {
-            // eslint-disable-next-line no-nested-ternary
             return state === 'cart'
                 ? 'cart'
-                : // eslint-disable-next-line no-nested-ternary
-                state === 'delivery'
+                : state === 'delivery'
                 ? 'cart'
                 : state === 'checkout'
                 ? 'delivery'
@@ -38,4 +33,6 @@ const stepReducer = (state = 'cart', action) => {
 export const rootReducer = combineReducers({
     step: stepReducer,
     cart: cartReducer,
+    delivery: deliveryReducer,
+    checkout: checkoutReducer,
 })
