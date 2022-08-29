@@ -21,12 +21,12 @@ module.exports = {
             },
         ],
         // Indent with 4 spaces
-        indent: ['warn', 4],
+        indent: ['off', 4],
 
         // Indent JSX with 4 spaces
-        'react/jsx-indent': ['warn', 4],
+        'react/jsx-indent': ['off', 4],
 
         // Indent props with 4 spaces
-        'react/jsx-indent-props': ['warn', 4],
+        'react/jsx-indent-props': ['off', 4],
     },
 }
