@@ -1,8 +1,10 @@
+/* eslint-disable import/prefer-default-export */
 import {
     GET_DELIVERY_METHODS,
     GET_DELIVERY_METHODS_FAILED,
     SET_DELIVERY_METHOD,
     GET_DELIVERY_METHODS_SUCCESS,
+    SET_DELIVERY_FORM_VALUE,
 } from '../actions/delivery'
 
 const deliveryInitialState = {
@@ -10,7 +12,16 @@ const deliveryInitialState = {
     deliveryMethodsRequest: false,
     deliveryMethodsFailed: false,
     selectedDeliveryId: null,
+    deliveryForm: {
+        name: '',
+        phone: '',
+        address: '',
+        unitNumber: '',
+        intercom: '',
+        floor: '',
+    },
 }
+// eslint-disable-next-line default-param-last
 export const deliveryReducer = (state = deliveryInitialState, action) => {
     switch (action.type) {
         case GET_DELIVERY_METHODS: {
@@ -42,6 +53,15 @@ export const deliveryReducer = (state = deliveryInitialState, action) => {
             return {
                 ...state,
                 selectedDeliveryId: action.id,
+            }
+        }
+        case SET_DELIVERY_FORM_VALUE: {
+            return {
+                ...state,
+                deliveryForm: {
+                    ...state.deliveryForm,
+                    [action.field]: action.value,
+                },
             }
         }
         default: {
