@@ -180,3 +180,368 @@ dispatch(getItems())
 
 Для перехода по шагам воспользуйтесь функцией, возвращаемой из хука `useDispatch`
 . Вызывайте её внутри функций `prev`  и `next`  с соответствующими экшенами.
+
+## task 2/2
+
+В этом задании мы завершим работу над корзиной. Осталось совсем чуть-чуть — реализовать сохранение вводимых значений в поле адреса доставки.
+
+Для этого нужно сделать следующее:
+
+1. В редьюсере `delivery.js` файла `./services/reducers/delivery.js` добавить ещё одно условие. Оно должно срабатывать, когда тип экшена равен `SET_DELIVERY_FORM_VALUE`. У этого экшена такая структура:
+
+    ```jsx
+    {
+        type: SET_DELIVERY_FORM_VALUE,
+            field, // Изменяемое поле
+            value // Значение
+    }
+    ```
+
+    В редьюсере необходимо изменять ключ `deliveryForm`. Используйте `field` из экшена как ключ объекта, а `value` — как его значение.
+
+2. В файле `./components/delivery/index.jsx` замените использование хука `const [address, setAddress] = useState('');` на хуки `useDispatch` и `useSelector`. Значение `store.delivery.deliveryForm.address` из хранилища присвойте переменной `address`. А функцию `setAddress` напишите заново. Её единственный аргумент — `address`, а внутри неё должен вызываться `dispatch` из хука `useDispatch` c таким экшеном:
+
+    `{ type: SET_DELIVERY_FORM_VALUE, field: 'address', value: address }`. Так найденный на карте или через поиск адрес будет сохранён в Redux.
+
+3. В файле `./components/delivery/inputs-box.jsx` замените способ получения переменной `deliveryForm`. Воспользуйтесь хуком `useSelector` и достаньте из хранилища значение `delivery.deliveryForm`.
+4. В компоненте `InputsBox` того же файла допишите функцию `onChange`. Внутри должен вызываться `dispatch` с экшеном такого вида:
+
+    `{ type: SET_DELIVERY_FORM_VALUE, field: e.target.name, value: e.target.value }`
+
+Если всё сделано правильно, введённые значения на шаге выбора доставки будут отображены на третьем шаге подтверждения заказа. Попробуйте оформить заказ.
+
+**Подсказка**
+
+Чтобы использовать `dispatch`, воспользуйтесь хуком `useDispatch`. А чтобы не переписывать больше кода, чем требуется в третьем шаге, используйте возможности деструктуризации: `const { deliveryForm } = useSelector(state => state.delivery);`.
+
+Мы знаем, что это сложная задача в плане проверки кода тренажером на валидность. Если вы уверены, что ваш код правильный, но тренажер не может его принять, вы можете сравнить ваше решение с решением автора:
+
+-   `services/reducers/delivery.js`
+
+    ```jsx
+    import {
+      GET_DELIVERY_METHODS,
+      GET_DELIVERY_METHODS_FAILED,
+      SET_DELIVERY_FORM_VALUE,
+      SET_DELIVERY_METHOD,
+      GET_DELIVERY_METHODS_SUCCESS
+    } from '../actions/delivery';
+
+    const deliveryInitialState = {
+      deliveryMethods: [],
+      deliveryMethodsRequest: false,
+      deliveryMethodsFailed: false,
+      selectedDeliveryId: null,
+      deliveryForm: {
+        name: '',
+        phone: '',
+        address: '',
+        unitNumber: '',
+        intercom: '',
+        floor: ''
+      }
+    };
+    export const deliveryReducer = (state = deliveryInitialState, action) => {
+      switch (action.type) {
+        case GET_DELIVERY_METHODS: {
+          return {
+            ...state,
+            deliveryMethodsFailed: false,
+            deliveryMethodsRequest: true
+          };
+        }
+        case GET_DELIVERY_METHODS_FAILED: {с      return {
+            ...state,
+            deliveryMethodsFailed: true,
+            deliveryMethodsRequest: false
+          };
+        }
+        case GET_DELIVERY_METHODS_SUCCESS: {
+          return {
+            ...state,
+            deliveryMethods: action.methods,
+            deliveryMethodsRequest: false,
+            selectedDeliveryId:
+              !!action.methods.length && state.selectedDeliveryId === null
+                ? action.methods[0].id
+                : state.selectedDeliveryId
+          };
+        }
+        case SET_DELIVERY_METHOD: {
+          return {
+            ...state,
+            selectedDeliveryId: action.id
+          };
+        }
+        case SET_DELIVERY_FORM_VALUE: {
+          return {
+            ...state,
+            deliveryForm: {
+              ...state.deliveryForm,
+              [action.field]: action.value
+            }
+          };
+        }
+        default: {
+          return state;
+        }
+      }
+    };
+    ```
+
+-   `components/delivery/index.jsx`
+
+    ```jsx
+    import React, { useRef, useEffect, useCallback } from 'react'
+    import { YMaps, Map } from 'react-yandex-maps'
+    import { InputsBox } from './inputs-box'
+    import styles from './delivery.module.css'
+    import { DeliveryMethod } from './delivery-method'
+    import { useDispatch, useSelector } from 'react-redux'
+    import { SET_DELIVERY_FORM_VALUE } from '../../services/actions/delivery'
+    import { MapSuggestComponent } from './delivery-suggest-input'
+
+    const mapState = {
+        center: [55.753994, 37.622093],
+        zoom: 9,
+        behaviors: ['scrollZoom'],
+        controls: [],
+    }
+
+    export default function SuggestInput({ onChange, value }) {
+        return (
+            <YMaps>
+                <MapSuggestComponent onChange={onChange} value={value} />
+            </YMaps>
+        )
+    }
+
+    export const Delivery = () => {
+        const address = useSelector((state) => state.delivery.deliveryForm.address)
+        const dispatch = useDispatch()
+        const setAddress = (address) => {
+            dispatch({ type: SET_DELIVERY_FORM_VALUE, field: 'address', value: address })
+        }
+        const ymaps = useRef(null)
+        const placemarkRef = useRef(null)
+        const mapRef = useRef(null)
+
+        const getGeocodeResult = async (criteria) => {
+            return !!ymaps.current && !!criteria ? await ymaps.current.geocode(criteria) : null
+        }
+        const createPlacemark = useCallback(
+            (coords) => {
+                return new ymaps.current.Placemark(
+                    coords,
+                    {},
+                    {
+                        preset: 'islands#blueCircleDotIcon',
+                    }
+                )
+            },
+            [ymaps]
+        )
+
+        const getAddressByCoords = async (coords) => {
+            placemarkRef.current.properties.set('iconCaption', 'Загрузка...')
+            const result = await getGeocodeResult(coords)
+            if (result) {
+                const newAddress = getAddressFromGeocodeResult(result)
+                setAddress(newAddress)
+
+                placemarkRef.current.properties.set({
+                    iconCaption: '',
+                })
+            }
+        }
+
+        const getAddressFromGeocodeResult = useCallback((data) => {
+            const firstGeoObject = data.geoObjects.get(0)
+            const newAddress = [
+                firstGeoObject.getLocalities().length
+                    ? firstGeoObject.getLocalities()
+                    : firstGeoObject.getAdministrativeAreas(),
+                firstGeoObject.getThoroughfare() || firstGeoObject.getPremise(),
+                !!firstGeoObject.getPremiseNumber() && firstGeoObject.getPremiseNumber(),
+            ]
+                .filter(Boolean)
+                .join(', ')
+            return newAddress
+        }, [])
+
+        const zoomToPoint = (coords) => {
+            mapRef.current.setCenter(coords)
+
+            mapRef.current.setZoom(18, {
+                smooth: true,
+                position: coords,
+                centering: true,
+                duration: 5,
+            })
+        }
+
+        const updatePlaceMark = async () => {
+            const result = await getGeocodeResult(address)
+            if (result) {
+                const firstObject = result.geoObjects.get(0)
+                if (firstObject) {
+                    const coords = result.geoObjects.get(0).geometry.getCoordinates()
+                    renderPlaceMark(coords)
+                    zoomToPoint(coords)
+                }
+            }
+        }
+
+        const renderPlaceMark = useCallback(
+            (coords) => {
+                if (placemarkRef.current) {
+                    placemarkRef.current.geometry.setCoordinates(coords)
+                } else {
+                    placemarkRef.current = createPlacemark(coords)
+                    mapRef.current.geoObjects.add(placemarkRef.current)
+                }
+            },
+            [placemarkRef, mapRef, createPlacemark]
+        )
+
+        const onMapClick = useCallback(
+            (e) => {
+                const coords = e.get('coords')
+                renderPlaceMark(coords)
+                getAddressByCoords(coords)
+            },
+            [getAddressByCoords, renderPlaceMark]
+        )
+
+        useEffect(() => {
+            if (address) {
+                updatePlaceMark()
+            }
+        }, [address])
+
+        const onLoad = (ymapsInstance) => {
+            ymaps.current = ymapsInstance
+        }
+
+        return (
+            <section className={`${styles.delivery}`}>
+                <div className={styles.inputbox}>
+                    <SuggestInput onChange={setAddress} value={address} />
+                </div>
+                <div className={styles.map}>
+                    <YMaps>
+                        <Map
+                            modules={['Placemark', 'geocode', 'geoObject.addon.balloon']}
+                            instanceRef={mapRef}
+                            onLoad={onLoad}
+                            onClick={onMapClick}
+                            state={mapState}
+                            width="100%"
+                            height="280px"
+                        />
+                    </YMaps>
+                </div>
+                <InputsBox />
+                <DeliveryMethod />
+            </section>
+        )
+    }
+    ```
+
+-   `components/delivery/inputs-box.jsx`
+
+````jsx
+import styles from './inputs-box.module.css';
+import { Input } from '../../ui/input/input';
+import React from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { SET_DELIVERY_FORM_VALUE } from '../../services/actions/delivery';
+
+export const InputsBox = () => {
+const { deliveryForm } = useSelector(state => state.delivery);
+
+const dispatch = useDispatch();
+
+const onChange = e => {
+ dispatch({ type: SET_DELIVERY_FORM_VALUE, field: e.target.name, value: e.target.value });
+};
+return (
+ <div className={`${styles.container}`}>
+   <ul className={styles.row}>
+     <li className={`${styles.input} ${styles.inputFlex}`}>
+       <div className={styles.input}>
+         <label className={styles.label} htmlFor="unitNumber">
+           Номер квартиры/офиса
+         </label>
+         <Input
+           onChange={onChange}
+           name={'unitNumber'}
+           value={deliveryForm.unitNumber}
+           extraClass={styles.input}
+           type="text"
+           id="unitNumber"
+         />
+       </div>
+       <div className={styles.input}>
+         <label className={styles.label} htmlFor="intercom">
+           Домофон
+         </label>
+         <Input
+           onChange={onChange}
+           name={'intercom'}
+           value={deliveryForm.intercom}
+           extraClass={styles.input}
+           type="text"
+           id="intercom"
+         />
+       </div>
+     </li>
+     <li className={`${styles.input} ${styles.floor}`}>
+       <label className={styles.label} htmlFor="floor">
+         Этаж
+       </label>
+       <Input
+         onChange={onChange}
+         name={'floor'}
+         value={deliveryForm.floor}
+         extraClass={styles.input}
+         type="text"
+         id="floor"
+       />
+     </li>
+   </ul>
+   <ul className={styles.row}>
+     <li className={styles.input}>
+       <label className={styles.label} htmlFor="name">
+         ФИО получателя
+       </label>
+       <Input
+         onChange={onChange}
+         name={'name'}
+         value={deliveryForm.name}
+         type="text"
+         extraClass={styles.input}
+         id="name"
+         placeholder="Введите ФИО"
+       />
+     </li>
+     <li className={styles.input}>
+       <label className={styles.label} htmlFor="phone">
+         Телефон
+       </label>
+       <Input
+         onChange={onChange}
+         name={'phone'}
+         value={deliveryForm.phone}
+         extraClass={styles.input}
+         type="tel"
+         id="phone"
+         placeholder="+7"
+       />
+     </li>
+   </ul>
+ </div>
+);
+};
+ ```
+````
